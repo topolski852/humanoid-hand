@@ -58,6 +58,7 @@ Open a serial monitor at **9600 baud** and send single characters:
 # one-time setup
 arduino-cli core update-index
 arduino-cli core install arduino:avr
+arduino-cli lib install Servo   # no longer bundled with the AVR core
 
 # with the Uno plugged in, find its port
 arduino-cli board list
