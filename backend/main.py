@@ -20,7 +20,11 @@ from fastapi.staticfiles import StaticFiles
 
 from hand import SerialHand, FINGERS
 from hand.tracking import HandTracker
-from api import hand_router, tracking_router, auth_router, require_auth, auth_required, token_valid
+from hand.camera import CameraFeed
+from api import (
+    hand_router, tracking_router, auth_router, camera_router,
+    require_auth, auth_required, token_valid,
+)
 
 logging.basicConfig(level=logging.INFO)
 _log = logging.getLogger(__name__)
@@ -38,6 +42,7 @@ async def lifespan(app: FastAPI):
     hand = SerialHand()
     app.state.hand = hand
     app.state.tracker = HandTracker(hand)
+    app.state.camera = CameraFeed(index=int(os.environ.get("HAND_CAMERA_INDEX", "0")))
 
     # Best-effort auto-connect to the first Arduino-like port on startup.
     try:
@@ -49,6 +54,7 @@ async def lifespan(app: FastAPI):
     yield
 
     app.state.tracker.stop()
+    app.state.camera.stop()
     hand.disconnect()
 
 
@@ -63,6 +69,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)                                        # public
+app.include_router(camera_router)                                      # token via query for /stream
 app.include_router(hand_router, dependencies=[Depends(require_auth)])
 app.include_router(tracking_router, dependencies=[Depends(require_auth)])
 

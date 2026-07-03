@@ -2,6 +2,7 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { TelemetryProvider } from './context/TelemetryContext'
 import AuthGate from './components/AuthGate'
 import Sidebar from './components/Sidebar'
+import LiveViewPanel from './components/LiveViewPanel'
 import HandControl from './pages/HandControl'
 import ConfigureLimits from './pages/ConfigureLimits'
 import HandTracking from './pages/HandTracking'
@@ -22,6 +23,8 @@ function AppInner() {
           <Route path="*" element={<Navigate to="/control" replace />} />
         </Routes>
       </main>
+      {/* Persistent robot live view on every page */}
+      <LiveViewPanel />
     </div>
   )
 }

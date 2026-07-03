@@ -21,6 +21,13 @@ export function wsUrl(path) {
   return `${proto}//${window.location.host}${path}${q}`
 }
 
+// MJPEG stream URL for an <img> (token via query — img can't send a header).
+export function cameraStreamUrl() {
+  const token = getToken()
+  const q = token ? `?token=${encodeURIComponent(token)}` : ''
+  return `${BASE}/camera/stream${q}`
+}
+
 async function request(path, options = {}, signal = undefined) {
   const token = getToken()
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) }
