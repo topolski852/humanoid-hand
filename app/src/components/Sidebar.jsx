@@ -5,9 +5,11 @@ import { useTelemetry } from '../context/TelemetryContext'
 import StatusDot from './StatusDot'
 
 const LINKS = [
-  { to: '/asl',      label: 'ASL Signs', icon: HandIcon },
-  { to: '/live',     label: 'Live',      icon: SlidersIcon },
-  { to: '/settings', label: 'Settings',  icon: GearIcon },
+  { to: '/control',   label: 'Hand Control',     icon: HandIcon },
+  { to: '/configure', label: 'Configure Limits', icon: SlidersIcon },
+  { to: '/tracking',  label: 'Hand Tracking',    icon: CameraIcon },
+  { to: '/asl',       label: 'ASL Signs',        icon: LettersIcon },
+  { to: '/settings',  label: 'Settings',         icon: GearIcon },
 ]
 
 function SidebarLink({ to, label, icon: Icon }) {
@@ -97,6 +99,15 @@ function HandIcon(props) {
     </svg>
   )
 }
+function CameraIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+      <circle cx="12" cy="13" r="4" />
+    </svg>
+  )
+}
 function SlidersIcon(props) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
@@ -106,6 +117,15 @@ function SlidersIcon(props) {
       <line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" />
       <line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" />
       <line x1="17" y1="16" x2="23" y2="16" />
+    </svg>
+  )
+}
+function LettersIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M4 18V7a3 3 0 0 1 6 0v11" /><line x1="4" y1="13" x2="10" y2="13" />
+      <path d="M14 6v9a3 3 0 0 0 6 0V6" />
     </svg>
   )
 }

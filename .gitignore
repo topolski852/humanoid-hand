@@ -15,6 +15,13 @@ __pycache__/
 .venv/
 venv/
 
+# Per-device joint-limit calibration
+backend/hand/limits.json
+
+# Hand-tracking model (downloaded) + per-device gesture calibration
+backend/hand/models/
+backend/hand/tracking_cal.json
+
 # Editor / OS cruft
 .vscode/
 .DS_Store

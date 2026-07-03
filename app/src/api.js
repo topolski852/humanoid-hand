@@ -34,4 +34,30 @@ export const api = {
     request('/servos', { method: 'POST', body: JSON.stringify({ angles }) }),
   jog: (key) => request('/jog', { method: 'POST', body: JSON.stringify({ key }) }),
   rest: () => request('/rest', { method: 'POST' }),
+
+  // ── Pulse control + live limit calibration ────────────────────────────────
+  nudge: (finger, delta) =>
+    request('/nudge', { method: 'POST', body: JSON.stringify({ finger, delta }) }),
+  relax: () => request('/relax', { method: 'POST' }),
+  getLimits: () => request('/limits'),
+  // which: 'open' | 'close'; value defaults to the finger's current angle
+  setLimit: (finger, which, value = null) =>
+    request('/limit', { method: 'POST', body: JSON.stringify({ finger, which, value }) }),
+  clearLimit: (finger) =>
+    request('/limit/clear', { method: 'POST', body: JSON.stringify({ finger }) }),
+  // Commit calibration: tighten hardstops + apply the position offset (0-at-close).
+  configure: () => request('/configure', { method: 'POST' }),
+  // Drive configured finger(s) to their open/close limit. finger: name or 'all'.
+  goto: (which, finger = 'all') =>
+    request('/goto', { method: 'POST', body: JSON.stringify({ finger, which }) }),
+
+  // ── Webcam hand tracking ──────────────────────────────────────────────────
+  trackStart: (camera = 0) =>
+    request('/track/start', { method: 'POST', body: JSON.stringify({ camera }) }),
+  trackStop: () => request('/track/stop', { method: 'POST' }),
+  getTrackStatus: () => request('/track/status'),
+  setTrackDrive: (enabled) =>
+    request('/track/drive', { method: 'POST', body: JSON.stringify({ enabled }) }),
+  trackCalibrate: (pose) =>
+    request('/track/calibrate', { method: 'POST', body: JSON.stringify({ pose }) }),
 }

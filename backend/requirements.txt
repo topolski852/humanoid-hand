@@ -2,3 +2,7 @@ fastapi>=0.111
 uvicorn[standard]>=0.29
 pydantic>=2.7
 pyserial>=3.5
+# opencv-contrib-python (mediapipe's cv2 dep) pinned <5 — the 5.0 preview's V4L2
+# backend can't open cameras on Linux.
+opencv-contrib-python>=4.9,<5
+mediapipe>=0.10.14

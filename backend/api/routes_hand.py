@@ -52,6 +52,26 @@ class JogBody(BaseModel):
     key: str
 
 
+class NudgeBody(BaseModel):
+    finger: str
+    delta: int
+
+
+class LimitBody(BaseModel):
+    finger: str
+    which: str                 # "open" | "close"
+    value: int | None = None   # defaults to the finger's current angle
+
+
+class ClearLimitBody(BaseModel):
+    finger: str
+
+
+class GotoBody(BaseModel):
+    finger: str = "all"        # a finger name or "all"
+    which: str                 # "open" | "close"
+
+
 # ── routes ───────────────────────────────────────────────────────────────────
 
 @router.get("/ports", response_model=None)
@@ -125,6 +145,102 @@ def jog(body: JogBody, request: Request):
     except Exception as exc:
         return _err(str(exc), 500)
     return _ok({"key": body.key})
+
+
+@router.post("/nudge", response_model=None)
+def nudge(body: NudgeBody, request: Request):
+    if body.finger not in FINGERS:
+        return _err(f"unknown finger '{body.finger}'", 400)
+    hand, error = _require_connected(request)
+    if error:
+        return error
+    try:
+        hand.send_nudge(FINGERS.index(body.finger), body.delta)
+    except Exception as exc:
+        return _err(str(exc), 500)
+    return _ok({"finger": body.finger, "delta": body.delta})
+
+
+@router.post("/relax", response_model=None)
+def relax(request: Request):
+    hand, error = _require_connected(request)
+    if error:
+        return error
+    try:
+        hand.send_relax()
+    except Exception as exc:
+        return _err(str(exc), 500)
+    return _ok({"relaxed": True})
+
+
+@router.get("/limits", response_model=None)
+def get_limits(request: Request):
+    return _ok(request.app.state.hand.limits)
+
+
+@router.post("/limit", response_model=None)
+def set_limit(body: LimitBody, request: Request):
+    if body.finger not in FINGERS:
+        return _err(f"unknown finger '{body.finger}'", 400)
+    hand, error = _require_connected(request)
+    if error:
+        return error
+    # Default the captured value to the finger's current commanded angle.
+    value = body.value if body.value is not None else hand.status()["angles"].get(body.finger)
+    if value is None:
+        return _err("no current angle available for finger", 409)
+    try:
+        limit = hand.set_limit(body.finger, body.which, int(value))
+    except ValueError as exc:
+        return _err(str(exc), 400)
+    except Exception as exc:
+        return _err(str(exc), 500)
+    return _ok({"finger": body.finger, "limit": limit})
+
+
+@router.post("/goto", response_model=None)
+def goto(body: GotoBody, request: Request):
+    """Drive configured finger(s) to their open/close limit (finger name or 'all')."""
+    if body.finger != "all" and body.finger not in FINGERS:
+        return _err(f"unknown finger '{body.finger}'", 400)
+    hand, error = _require_connected(request)
+    if error:
+        return error
+    try:
+        moved = hand.goto(body.finger, body.which)
+    except ValueError as exc:
+        return _err(str(exc), 400)
+    except Exception as exc:
+        return _err(str(exc), 500)
+    return _ok({"which": body.which, "moved": moved})
+
+
+@router.post("/configure", response_model=None)
+def configure(request: Request):
+    """Commit calibration: tighten firmware hardstops to captured ranges and mark
+    fingers configured (the position-offset / 0-at-close coordinate takes effect)."""
+    hand, error = _require_connected(request)
+    if error:
+        return error
+    try:
+        limits = hand.configure()
+    except Exception as exc:
+        return _err(str(exc), 500)
+    return _ok(limits)
+
+
+@router.post("/limit/clear", response_model=None)
+def clear_limit(body: ClearLimitBody, request: Request):
+    if body.finger not in FINGERS:
+        return _err(f"unknown finger '{body.finger}'", 400)
+    hand, error = _require_connected(request)
+    if error:
+        return error
+    try:
+        limit = hand.clear_limit(body.finger)
+    except Exception as exc:
+        return _err(str(exc), 500)
+    return _ok({"finger": body.finger, "limit": limit})
 
 
 @router.post("/rest", response_model=None)
