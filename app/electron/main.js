@@ -140,9 +140,12 @@ app.whenReady().then(async () => {
   if (!IS_DEV) {
     const prodCSP = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:",
+      "worker-src 'self' blob:",
+      "child-src 'self' blob:",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data:",
+      "media-src 'self' blob:",
       "font-src 'self' data:",
       "connect-src http://localhost:8765 ws://localhost:8765",
     ].join('; ')
@@ -158,6 +161,11 @@ app.whenReady().then(async () => {
       }
     )
   }
+
+  // Allow the renderer to use the camera (getUserMedia) for hand tracking.
+  session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) => {
+    callback(permission === 'media')
+  })
 
   ipcMain.on('app-quit', () => app.quit())
 

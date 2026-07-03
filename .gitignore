@@ -22,6 +22,10 @@ backend/hand/limits.json
 backend/hand/models/
 backend/hand/tracking_cal.json
 
+# In-browser MediaPipe assets (regen: app/scripts/setup-tracking-assets.sh)
+app/public/mediapipe/
+app/public/models/
+
 # Editor / OS cruft
 .vscode/
 .DS_Store

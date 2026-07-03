@@ -79,8 +79,8 @@ curl -L -o hand/models/hand_landmarker.task \
   https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task
 cd ..
 
-# 3) app deps (one-time)
-cd app && npm install && cd ..
+# 3) app deps (one-time) + in-browser tracking assets (WASM + model)
+cd app && npm install && ./scripts/setup-tracking-assets.sh && cd ..
 
 # 4) run — launches Vite, Electron, and the backend together
 cd app && npm run dev
@@ -130,16 +130,19 @@ re-login after a backend restart.
 
 ## Hand tracking (webcam teleoperation)
 
-OpenCV + MediaPipe HandLandmarker run **in the backend**, which owns the webcam
-and streams an annotated preview (with a landmark wireframe) to the app. On the
-**Hand Tracking** page: Start tracking, hold your hand up, capture your open/fist
-range, then enable **Drive hand** — the robot mirrors your fingers (smoothed,
-rate-limited, only configured fingers, clamped to your hardstops).
+Tracking runs **in the browser** using MediaPipe Tasks-Vision on the **visitor's
+own camera** (`getUserMedia`) — so a remote web user tracks *their* hand, not the
+server's. Only the per-finger openness numbers are sent to the backend (`/ws/drive`),
+which maps them to each finger's calibrated range and drives the servos. The
+wireframe overlay is drawn client-side; the camera never leaves the device. On the
+**Hand Tracking** page: Start camera, capture your open/fist range, then enable
+**Drive hand** (smoothed, rate-limited, configured fingers only, clamped to limits).
 
-- Only one app can use the camera at a time — close other webcam apps (e.g.
-  Cheese) first.
-- The webcam (`/dev/video0`) is group `video`; most desktop sessions grant access
-  via ACL. If not: `sudo usermod -aG video $USER` (then re-login) or `sg video`.
+- Browsers only allow the camera in a **secure context** — `https://` or
+  `localhost`. Over a plain-HTTP LAN/Tailscale IP the camera is blocked; front the
+  app with HTTPS (e.g. `tailscale serve`) for remote use.
+- The `@mediapipe/tasks-vision` WASM + model are served locally from `app/public/`
+  (staged by `app/scripts/setup-tracking-assets.sh`, gitignored).
 
 ## Serial / permissions (Linux)
 

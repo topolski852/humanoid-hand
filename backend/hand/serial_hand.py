@@ -145,6 +145,18 @@ class SerialHand:
         """Drive one finger to an absolute unit ("j I A")."""
         self._write_line(f"j {int(index)} {int(angle)}")
 
+    def openness_to_raw(self, finger: str, openness: float) -> int | None:
+        """Map a 0..1 openness (0 = closed) to a configured finger's raw unit,
+        via its calibrated open/close limits. None if the finger isn't configured."""
+        lim = self.limits.get(finger)
+        if not lim or not lim.get("configured"):
+            return None
+        o, c = lim.get("open"), lim.get("close")
+        if o is None or c is None or o == c:
+            return None
+        openness = max(0.0, min(1.0, openness))
+        return round(c + openness * (o - c))
+
     def goto(self, finger: str, which: str) -> list[str]:
         """Drive configured finger(s) to their 'open' or 'close' limit. finger may
         be a name or 'all'. Only fingers that are configured actually move."""

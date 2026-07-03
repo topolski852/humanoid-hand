@@ -18,7 +18,7 @@ from fastapi import Depends, FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from hand import SerialHand
+from hand import SerialHand, FINGERS
 from hand.tracking import HandTracker
 from api import hand_router, tracking_router, auth_router, require_auth, auth_required, token_valid
 
@@ -95,6 +95,45 @@ async def ws_track(ws: WebSocket) -> None:
         pass
     finally:
         _log.info("Track client disconnected")
+
+
+@app.websocket("/ws/drive")
+async def ws_drive(ws: WebSocket) -> None:
+    """Receive per-finger openness (0..1) computed in the BROWSER (from the
+    visitor's own camera) and drive the servos. Rate-limited + deadbanded; only
+    configured fingers move; nothing moves unless the client sets driving=true."""
+    if not _ws_authed(ws):
+        await ws.close(code=1008)
+        return
+    await ws.accept()
+    _log.info("Drive client connected")
+    hand = ws.app.state.hand
+    last_sent: dict[str, int] = {}
+    last_t = 0.0
+    try:
+        while True:
+            msg = await ws.receive_json()
+            if not msg.get("driving") or not hand.is_connected():
+                continue
+            now = asyncio.get_event_loop().time()
+            if now - last_t < 1.0 / 15:
+                continue
+            last_t = now
+            for finger, o in (msg.get("openness") or {}).items():
+                if finger not in FINGERS:
+                    continue
+                raw = hand.openness_to_raw(finger, float(o))
+                if raw is None or abs(raw - last_sent.get(finger, 10 ** 6)) < 2:
+                    continue
+                try:
+                    hand.send_joint(FINGERS.index(finger), raw)
+                    last_sent[finger] = raw
+                except Exception:
+                    pass
+    except WebSocketDisconnect:
+        pass
+    finally:
+        _log.info("Drive client disconnected")
 
 
 @app.websocket("/ws/telemetry")
