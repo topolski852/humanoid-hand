@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
+import { wsUrl } from '../api'
 
-const WS_URL = 'ws://localhost:8765/ws/telemetry'
+const WS_URL = wsUrl('/ws/telemetry')
 
 const EMPTY_ANGLES = { thumb: 0, index: 0, middle: 0, ring: 0, pinky: 0, wrist: 0 }
 

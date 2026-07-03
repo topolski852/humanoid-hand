@@ -10,11 +10,13 @@ from __future__ import annotations
 import asyncio
 import base64
 import logging
+import os
 from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from hand import SerialHand
 from hand.tracking import HandTracker
@@ -25,6 +27,10 @@ _log = logging.getLogger(__name__)
 
 _TELEMETRY_HZ = 10
 _TRACK_FPS = 15
+
+# Built web UI (app/dist). When present, the backend serves it so the app is
+# usable from any browser — set HAND_HOST=0.0.0.0 to reach it across the network.
+_WEB_DIR = os.path.join(os.path.dirname(__file__), "..", "app", "dist")
 
 
 @asynccontextmanager
@@ -101,5 +107,17 @@ async def ws_telemetry(ws: WebSocket) -> None:
         _log.info("Telemetry client disconnected")
 
 
+# Serve the built web UI at "/" (must be mounted AFTER the API routes/websockets
+# so they take precedence). HashRouter means the browser only ever loads "/",
+# so no SPA catch-all is needed.
+if os.path.isdir(_WEB_DIR):
+    app.mount("/", StaticFiles(directory=_WEB_DIR, html=True), name="web")
+    _log.info("Serving web UI from %s", os.path.abspath(_WEB_DIR))
+else:
+    _log.info("No web UI build at %s — run `npm run build` in app/ to enable it", _WEB_DIR)
+
+
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="localhost", port=8765, reload=False, log_level="info")
+    host = os.environ.get("HAND_HOST", "localhost")
+    port = int(os.environ.get("HAND_PORT", "8765"))
+    uvicorn.run("main:app", host=host, port=port, reload=False, log_level="info")

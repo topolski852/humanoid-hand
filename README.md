@@ -89,6 +89,27 @@ cd app && npm run dev
 The Electron main process auto-detects `backend/.venv`, starts the backend, and
 the backend auto-connects to the first `/dev/ttyACM*` port (override in Settings).
 
+### Run as a web app (browser, no Electron)
+
+The same UI can be served from the backend so anyone on the network can use it in
+a browser. Build the UI once, then run the backend as the web server:
+
+```sh
+cd app && npm run build && cd ..              # produces app/dist/
+cd backend
+HAND_HOST=0.0.0.0 ./.venv/bin/python main.py  # serve on all interfaces, port 8765
+```
+
+Then browse to `http://<server-ip>:8765` (or `http://localhost:8765` locally). The
+frontend uses same-origin API/WebSocket URLs automatically, so it works from any
+host. The Arduino and webcam are on the **server** machine — remote users drive
+that hand and see that webcam.
+
+- This is an **alternative** to the desktop app — don't run both at once; they
+  contend for the serial port and camera.
+- No authentication: only expose it on a trusted LAN. `HAND_HOST`/`HAND_PORT`
+  default to `localhost`/`8765`.
+
 ### App pages
 
 - **Hand Control** — pulse fingers toward open/close (0 = closed), or drive them

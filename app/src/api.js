@@ -1,4 +1,15 @@
-const BASE = 'http://localhost:8765'
+// In the Electron app the renderer is loaded from Vite (:5173) or file://, so it
+// must reach the backend at an absolute localhost URL. When the app is served as
+// a website by the backend itself, use same-origin URLs so it works from any
+// browser/host on the network.
+const isElectron = typeof window !== 'undefined' && !!window.electron
+const BASE = isElectron ? 'http://localhost:8765' : ''
+
+export function wsUrl(path) {
+  if (isElectron) return `ws://localhost:8765${path}`
+  const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${proto}//${window.location.host}${path}`
+}
 
 async function request(path, options = {}, signal = undefined) {
   const res = await fetch(`${BASE}${path}`, {

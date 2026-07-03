@@ -77,12 +77,14 @@ export default function Sidebar() {
         {LINKS.map((l) => <SidebarLink key={l.to} {...l} />)}
       </nav>
 
-      {/* Footer */}
-      <div className="p-3 border-t border-surface-3">
-        <button onClick={() => window.electron?.quit?.()} className="btn-ghost w-full text-xs">
-          Quit
-        </button>
-      </div>
+      {/* Footer — Quit only makes sense in the desktop app */}
+      {window.electron && (
+        <div className="p-3 border-t border-surface-3">
+          <button onClick={() => window.electron?.quit?.()} className="btn-ghost w-full text-xs">
+            Quit
+          </button>
+        </div>
+      )}
     </aside>
   )
 }

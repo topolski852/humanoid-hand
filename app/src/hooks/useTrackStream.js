@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import { wsUrl } from '../api'
 
-const WS_URL = 'ws://localhost:8765/ws/track'
+const WS_URL = wsUrl('/ws/track')
 
 const EMPTY = {
   wsConnected: false,
