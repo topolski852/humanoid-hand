@@ -4,6 +4,17 @@ build/
 *.elf
 *.bin
 
+# Node / Electron app
+node_modules/
+app/dist/
+app/release/
+
+# Python backend
+__pycache__/
+*.pyc
+.venv/
+venv/
+
 # Editor / OS cruft
 .vscode/
 .DS_Store
