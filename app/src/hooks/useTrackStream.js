@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { wsUrl } from '../api'
 
-const WS_URL = wsUrl('/ws/track')
-
 const EMPTY = {
   wsConnected: false,
   running: false,
@@ -28,7 +26,7 @@ export function useTrackStream() {
 
     function connect() {
       if (cancelled) return
-      const ws = new WebSocket(WS_URL)
+      const ws = new WebSocket(wsUrl('/ws/track'))
       wsRef.current = ws
 
       ws.onopen = () => setState((s) => ({ ...s, wsConnected: true }))

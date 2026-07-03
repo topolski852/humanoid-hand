@@ -97,7 +97,8 @@ a browser. Build the UI once, then run the backend as the web server:
 ```sh
 cd app && npm run build && cd ..              # produces app/dist/
 cd backend
-HAND_HOST=0.0.0.0 ./.venv/bin/python main.py  # serve on all interfaces, port 8765
+# Serve on all interfaces with a shared password:
+HAND_HOST=0.0.0.0 HAND_PASSWORD='choose-a-password' ./.venv/bin/python main.py
 ```
 
 Then browse to `http://<server-ip>:8765` (or `http://localhost:8765` locally). The
@@ -105,10 +106,16 @@ frontend uses same-origin API/WebSocket URLs automatically, so it works from any
 host. The Arduino and webcam are on the **server** machine — remote users drive
 that hand and see that webcam.
 
+**Access control.** If `HAND_PASSWORD` is set, the web UI shows a login screen and
+every API call + WebSocket requires the shared password (a token is issued on
+login and sent as a bearer header / WS query param). If it is unset (the default,
+for desktop/localhost use) auth is disabled. Tokens are in-memory, so clients
+re-login after a backend restart.
+
 - This is an **alternative** to the desktop app — don't run both at once; they
   contend for the serial port and camera.
-- No authentication: only expose it on a trusted LAN. `HAND_HOST`/`HAND_PORT`
-  default to `localhost`/`8765`.
+- The login password is sent over plain HTTP — only expose this on a trusted LAN
+  (there's no TLS). `HAND_HOST`/`HAND_PORT` default to `localhost`/`8765`.
 
 ### App pages
 

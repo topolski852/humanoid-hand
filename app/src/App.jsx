@@ -1,5 +1,6 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { TelemetryProvider } from './context/TelemetryContext'
+import AuthGate from './components/AuthGate'
 import Sidebar from './components/Sidebar'
 import HandControl from './pages/HandControl'
 import ConfigureLimits from './pages/ConfigureLimits'
@@ -27,10 +28,12 @@ function AppInner() {
 
 export default function App() {
   return (
-    <TelemetryProvider>
-      <HashRouter>
-        <AppInner />
-      </HashRouter>
-    </TelemetryProvider>
+    <AuthGate>
+      <TelemetryProvider>
+        <HashRouter>
+          <AppInner />
+        </HashRouter>
+      </TelemetryProvider>
+    </AuthGate>
   )
 }

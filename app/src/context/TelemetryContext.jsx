@@ -1,8 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { wsUrl } from '../api'
 
-const WS_URL = wsUrl('/ws/telemetry')
-
 const EMPTY_ANGLES = { thumb: 0, index: 0, middle: 0, ring: 0, pinky: 0, wrist: 0 }
 
 const TelemetryContext = createContext({
@@ -25,7 +23,7 @@ export function TelemetryProvider({ children }) {
 
     function connect() {
       if (cancelled) return
-      const ws = new WebSocket(WS_URL)
+      const ws = new WebSocket(wsUrl('/ws/telemetry'))
       wsRef.current = ws
 
       ws.onopen = () => setWsConnected(true)

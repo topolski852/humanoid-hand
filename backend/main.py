@@ -14,13 +14,13 @@ import os
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from hand import SerialHand
 from hand.tracking import HandTracker
-from api import hand_router, tracking_router
+from api import hand_router, tracking_router, auth_router, require_auth, auth_required, token_valid
 
 logging.basicConfig(level=logging.INFO)
 _log = logging.getLogger(__name__)
@@ -62,12 +62,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(hand_router)
-app.include_router(tracking_router)
+app.include_router(auth_router)                                        # public
+app.include_router(hand_router, dependencies=[Depends(require_auth)])
+app.include_router(tracking_router, dependencies=[Depends(require_auth)])
+
+
+def _ws_authed(ws: WebSocket) -> bool:
+    return not auth_required() or token_valid(ws.query_params.get("token"))
 
 
 @app.websocket("/ws/track")
 async def ws_track(ws: WebSocket) -> None:
+    if not _ws_authed(ws):
+        await ws.close(code=1008)
+        return
     await ws.accept()
     _log.info("Track client connected")
     interval = 1.0 / _TRACK_FPS
@@ -91,6 +99,9 @@ async def ws_track(ws: WebSocket) -> None:
 
 @app.websocket("/ws/telemetry")
 async def ws_telemetry(ws: WebSocket) -> None:
+    if not _ws_authed(ws):
+        await ws.close(code=1008)
+        return
     await ws.accept()
     _log.info("Telemetry client connected")
     interval = 1.0 / _TELEMETRY_HZ

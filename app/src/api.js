@@ -4,19 +4,35 @@
 // browser/host on the network.
 const isElectron = typeof window !== 'undefined' && !!window.electron
 const BASE = isElectron ? 'http://localhost:8765' : ''
+const TOKEN_KEY = 'hand_token'
+
+export function getToken() {
+  try { return localStorage.getItem(TOKEN_KEY) } catch { return null }
+}
+export function setToken(t) {
+  try { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY) } catch { /* ignore */ }
+}
 
 export function wsUrl(path) {
-  if (isElectron) return `ws://localhost:8765${path}`
+  const token = getToken()
+  const q = token ? `?token=${encodeURIComponent(token)}` : ''
+  if (isElectron) return `ws://localhost:8765${path}${q}`
   const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${proto}//${window.location.host}${path}`
+  return `${proto}//${window.location.host}${path}${q}`
 }
 
 async function request(path, options = {}, signal = undefined) {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    signal,
-    ...options,
-  })
+  const token = getToken()
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) }
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch(`${BASE}${path}`, { ...options, headers, signal })
+  // A 401 on a protected route means the token is missing/expired — force re-login.
+  // (/auth/* 401s fall through so the login form can show "incorrect password".)
+  if (res.status === 401 && !path.startsWith('/auth/')) {
+    setToken(null)
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('hand-auth-expired'))
+    throw new Error('session expired — please log in again')
+  }
   const ct = res.headers.get('content-type') ?? ''
   if (!ct.includes('application/json')) {
     throw new Error(`HTTP ${res.status}: unexpected response type "${ct}"`)
@@ -27,6 +43,15 @@ async function request(path, options = {}, signal = undefined) {
 }
 
 export const api = {
+  // ── Auth ───────────────────────────────────────────────────────────────────
+  getAuthStatus: () => request('/auth/status'),
+  login: async (password) => {
+    const data = await request('/auth/login', { method: 'POST', body: JSON.stringify({ password }) })
+    setToken(data?.token ?? null)
+    return data
+  },
+  logout: () => setToken(null),
+
   // ── Connection ───────────────────────────────────────────────────────────
   listPorts: () => request('/ports'),
   connect: (port = null, baud = 9600) =>
