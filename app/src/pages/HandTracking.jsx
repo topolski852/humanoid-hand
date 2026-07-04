@@ -83,6 +83,12 @@ export default function HandTracking() {
     setDriving(next)
   }
 
+  async function relax() {
+    drivingRef.current = false
+    setDriving(false)
+    try { await api.relax() } catch (e) { setError(e.message) }
+  }
+
   function capture(pose) {
     const next = captureGesture(calRef.current, pose, metricsRef.current)
     calRef.current = next
@@ -144,9 +150,11 @@ export default function HandTracking() {
                 title={!connected ? 'connect the hand first' : (!anyConfigured ? 'calibrate limits first' : '')}>
                 {driving ? 'Driving ●' : 'Drive hand'}
               </button>
-              <button onClick={stop} className="btn-danger text-xs">Stop</button>
+              <button onClick={stop} className="btn-ghost text-xs">Stop camera</button>
             </>
           )}
+          <button onClick={relax} disabled={!connected} className="btn-danger text-xs"
+            title="detach all servos (stop holding force)">Relax</button>
         </div>
       </header>
 
